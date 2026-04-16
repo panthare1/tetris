@@ -5,10 +5,31 @@ from menu import MenuManager
 from settings import Settings, SettingsMenu
 
 
+# Board and screen sizing
 CELL_SIZE = 30
 CELL_INSET = 2
 BOARD_PX_W = 10 * CELL_SIZE
 BOARD_PX_H = 20 * CELL_SIZE
+SCREEN_W = BOARD_PX_W
+SCREEN_H = BOARD_PX_H
+
+# Background styling
+GRADIENT_BASE = 18
+GRADIENT_RANGE = 24
+GRADIENT_BLUE_TINT = 4
+GRID_LINE_COLOR = (40, 40, 44)
+
+# Block styling
+BLOCK_BORDER_RADIUS = 5
+BLOCK_BORDER_LIGHTEN = 45
+BLOCK_HIGHLIGHT = 70
+BLOCK_SHADOW = -70
+BLOCK_LINE_WIDTH = 2
+
+# Frame styling
+FRAME_COLOR = (16, 16, 18)
+FRAME_WIDTH = 4
+FRAME_RADIUS = 4
 
 
 def _shade(color, amount):
@@ -16,14 +37,15 @@ def _shade(color, amount):
 
 
 def draw_background(screen):
-    for y in range(600):
-        v = 18 + int((y / 600) * 24)
-        pygame.draw.line(screen, (v, v, v + 4), (0, y), (300, y))
+    gradient_step = GRADIENT_RANGE / SCREEN_H
+    for y in range(SCREEN_H):
+        v = GRADIENT_BASE + int(y * gradient_step)
+        pygame.draw.line(screen, (v, v, v + GRADIENT_BLUE_TINT), (0, y), (SCREEN_W, y))
 
     for x in range(0, BOARD_PX_W, CELL_SIZE):
-        pygame.draw.line(screen, (40, 40, 44), (x, 0), (x, BOARD_PX_H))
+        pygame.draw.line(screen, GRID_LINE_COLOR, (x, 0), (x, BOARD_PX_H))
     for y in range(0, BOARD_PX_H, CELL_SIZE):
-        pygame.draw.line(screen, (40, 40, 44), (0, y), (BOARD_PX_W, y))
+        pygame.draw.line(screen, GRID_LINE_COLOR, (0, y), (BOARD_PX_W, y))
 
 
 def draw_block(screen, grid_x, grid_y, color):
@@ -31,15 +53,25 @@ def draw_block(screen, grid_x, grid_y, color):
     y = grid_y * CELL_SIZE + CELL_INSET
     size = CELL_SIZE - (CELL_INSET * 2)
     rect = pygame.Rect(x, y, size, size)
-    pygame.draw.rect(screen, color, rect, border_radius=5)
-    pygame.draw.rect(screen, _shade(color, 45), rect, width=2, border_radius=5)
-    pygame.draw.line(screen, _shade(color, 70), (rect.left + 2, rect.top + 2), (rect.right - 2, rect.top + 2), 2)
-    pygame.draw.line(screen, _shade(color, -70), (rect.left + 2, rect.bottom - 2), (rect.right - 2, rect.bottom - 2), 2)
+    pygame.draw.rect(screen, color, rect, border_radius=BLOCK_BORDER_RADIUS)
+    pygame.draw.rect(screen, _shade(color, BLOCK_BORDER_LIGHTEN), rect, width=BLOCK_LINE_WIDTH, border_radius=BLOCK_BORDER_RADIUS)
+    pygame.draw.line(
+        screen, _shade(color, BLOCK_HIGHLIGHT),
+        (rect.left + CELL_INSET, rect.top + CELL_INSET),
+        (rect.right - CELL_INSET, rect.top + CELL_INSET),
+        BLOCK_LINE_WIDTH,
+    )
+    pygame.draw.line(
+        screen, _shade(color, BLOCK_SHADOW),
+        (rect.left + CELL_INSET, rect.bottom - CELL_INSET),
+        (rect.right - CELL_INSET, rect.bottom - CELL_INSET),
+        BLOCK_LINE_WIDTH,
+    )
 
 
 def draw_board_frame(screen):
     frame = pygame.Rect(0, 0, BOARD_PX_W, BOARD_PX_H)
-    pygame.draw.rect(screen, (16, 16, 18), frame, width=4, border_radius=4)
+    pygame.draw.rect(screen, FRAME_COLOR, frame, width=FRAME_WIDTH, border_radius=FRAME_RADIUS)
 
 
 def reset_game():
@@ -50,10 +82,10 @@ def reset_game():
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((300, 600))
+    screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
     pygame.display.set_caption("Tetris")
-    clock    = pygame.time.Clock()
-    menus    = MenuManager(screen)
+    clock = pygame.time.Clock()
+    menus = MenuManager(screen)
     settings = Settings()
     font     = pygame.font.SysFont(None, 28)
 
