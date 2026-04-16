@@ -5,6 +5,43 @@ from menu import MenuManager
 from settings import Settings, SettingsMenu
 
 
+CELL_SIZE = 30
+CELL_INSET = 2
+BOARD_PX_W = 10 * CELL_SIZE
+BOARD_PX_H = 20 * CELL_SIZE
+
+
+def _shade(color, amount):
+    return tuple(max(0, min(255, c + amount)) for c in color)
+
+
+def draw_background(screen):
+    for y in range(600):
+        v = 18 + int((y / 600) * 24)
+        pygame.draw.line(screen, (v, v, v + 4), (0, y), (300, y))
+
+    for x in range(0, BOARD_PX_W, CELL_SIZE):
+        pygame.draw.line(screen, (40, 40, 44), (x, 0), (x, BOARD_PX_H))
+    for y in range(0, BOARD_PX_H, CELL_SIZE):
+        pygame.draw.line(screen, (40, 40, 44), (0, y), (BOARD_PX_W, y))
+
+
+def draw_block(screen, grid_x, grid_y, color):
+    x = grid_x * CELL_SIZE + CELL_INSET
+    y = grid_y * CELL_SIZE + CELL_INSET
+    size = CELL_SIZE - (CELL_INSET * 2)
+    rect = pygame.Rect(x, y, size, size)
+    pygame.draw.rect(screen, color, rect, border_radius=5)
+    pygame.draw.rect(screen, _shade(color, 45), rect, width=2, border_radius=5)
+    pygame.draw.line(screen, _shade(color, 70), (rect.left + 2, rect.top + 2), (rect.right - 2, rect.top + 2), 2)
+    pygame.draw.line(screen, _shade(color, -70), (rect.left + 2, rect.bottom - 2), (rect.right - 2, rect.bottom - 2), 2)
+
+
+def draw_board_frame(screen):
+    frame = pygame.Rect(0, 0, BOARD_PX_W, BOARD_PX_H)
+    pygame.draw.rect(screen, (16, 16, 18), frame, width=4, border_radius=4)
+
+
 def reset_game():
     board = Board()
     piece = ShapeFactory.get_random_shape()
@@ -62,7 +99,7 @@ def main():
             continue
 
         # ── playing ───────────────────────────────────────────────────────────
-        screen.fill((20, 20, 20))
+        draw_background(screen)
 
         # 1. GRAVITY
         if board.is_valid_pos(current_piece, adj_y=1):
@@ -127,15 +164,17 @@ def main():
         for y, row in enumerate(board.grid):
             for x, color in enumerate(row):
                 if color != (0, 0, 0):
-                    pygame.draw.rect(screen, color, (x * 30, y * 30, 28, 28))
+                    draw_block(screen, x, y, color)
 
         for px, py in current_piece.get_image():
-            pygame.draw.rect(
-                screen, current_piece.color,
-                (round(current_piece.x + px) * 30,
-                 round(current_piece.y + py) * 30, 28, 28)
+            draw_block(
+                screen,
+                round(current_piece.x + px),
+                round(current_piece.y + py),
+                current_piece.color,
             )
 
+        draw_board_frame(screen)
         screen.blit(font.render(f"Score: {score}", True, (200, 200, 200)), (8, 8))
 
         pygame.display.flip()
