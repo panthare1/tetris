@@ -148,6 +148,7 @@ class SettingsMenu:
         pygame.draw.line(self.screen, C_ACCENT, (30, 62), (SCREEN_W - 30, 62), 1)
 
         # Each action row
+        row_rects = []
         for i, action in enumerate(self.actions):
             row_y     = 100 + i * 70
             is_sel    = (i == selected)
@@ -155,15 +156,16 @@ class SettingsMenu:
             row_color = C_WAITING if is_wait else (C_ACCENT if is_sel else C_WHITE)
             bg_color  = (50, 50, 20) if is_wait else (C_HIGHLIGHT if is_sel else None)
 
+            row_rect = pygame.Rect(20, row_y - 10, SCREEN_W - 40, 58)
+            row_rects.append(row_rect)
+
             # Row background
             if bg_color:
-                pygame.draw.rect(self.screen, bg_color,
-                                 (20, row_y - 10, SCREEN_W - 40, 58), border_radius=8)
+                pygame.draw.rect(self.screen, bg_color, row_rect, border_radius=8)
             # Highlight border for selected row
             if is_sel:
                 border_col = C_WAITING if is_wait else C_ACCENT
-                pygame.draw.rect(self.screen, border_col,
-                                 (20, row_y - 10, SCREEN_W - 40, 58),
+                pygame.draw.rect(self.screen, border_col, row_rect,
                                  width=1, border_radius=8)
 
             # Action label
@@ -188,8 +190,8 @@ class SettingsMenu:
 
         # Footer hints
         hints = [
-            "^v  navigate",
-            "ENTER  rebind selected",
+            "^v / hover  navigate",
+            "ENTER / click  rebind",
             "R  reset defaults",
             "ESC  back",
         ]
@@ -199,6 +201,7 @@ class SettingsMenu:
                                             centery=SCREEN_H - 58 + j * 18))
 
         pygame.display.flip()
+        return row_rects
 
     # ── public ───────────────────────────────────────────────────────────────
 
@@ -209,13 +212,27 @@ class SettingsMenu:
         conflict = None    # name of conflicting action, if any
 
         while True:
-            self._draw(selected, waiting, conflict)
+            row_rects = self._draw(selected, waiting, conflict)
             self.clock.tick(30)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     save_bindings(self.bindings)
                     return "back"
+
+                if event.type == pygame.MOUSEMOTION:
+                    if not waiting:
+                        for i, rect in enumerate(row_rects):
+                            if rect.collidepoint(event.pos):
+                                selected = i
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if not waiting:
+                        for i, rect in enumerate(row_rects):
+                            if rect.collidepoint(event.pos):
+                                selected = i
+                                waiting = True
+                                conflict = None
 
                 if event.type == pygame.KEYDOWN:
                     conflict = None   # clear any old warning

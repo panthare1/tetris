@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
 
 class Tetromino(ABC):
     def __init__(self, x, y, color):

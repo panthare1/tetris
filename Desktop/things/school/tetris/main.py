@@ -1,6 +1,6 @@
 import pygame
 from factory import ShapeFactory
-from logic import Board
+from logic import Board, LINE_SCORES
 from menu import MenuManager
 from settings import Settings, SettingsMenu
 
@@ -8,7 +8,7 @@ from settings import Settings, SettingsMenu
 def reset_game():
     board = Board()
     piece = ShapeFactory.get_random_shape()
-    return board, piece, 0
+    return board, piece, 0, 1  # board, piece, score, level
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
 
     state         = "start"
     game_snapshot = None
-    board, current_piece, score = reset_game()
+    board, current_piece, score, level = reset_game()
 
     while True:
 
@@ -35,7 +35,7 @@ def main():
                 SettingsMenu(screen).show()
                 settings.reload()
                 continue
-            board, current_piece, score = reset_game()
+            board, current_piece, score, level = reset_game()
             state = "playing"
             continue
 
@@ -44,7 +44,7 @@ def main():
             action = menus.show_game_over(score)
             if action == "quit":
                 break
-            board, current_piece, score = reset_game()
+            board, current_piece, score, level = reset_game()
             state = "playing"
             continue
 
@@ -66,11 +66,12 @@ def main():
 
         # 1. GRAVITY
         if board.is_valid_pos(current_piece, adj_y=1):
-            current_piece.y += 0.05
+            current_piece.y += 0.05 + (level - 1) * 0.02
         else:
             board.lock_shape(current_piece)
             lines = board.clear_lines()
-            score += lines * 100
+            score += LINE_SCORES.get(lines, 0)
+            level = score // 500 + 1  # level up every 500 points
             current_piece = ShapeFactory.get_random_shape()
             if not board.is_valid_pos(current_piece):
                 state = "game_over"
@@ -104,7 +105,8 @@ def main():
                         current_piece.y += 1
                     board.lock_shape(current_piece)
                     lines = board.clear_lines()
-                    score += lines * 100
+                    score += LINE_SCORES.get(lines, 0)
+                    level = score // 500 + 1
                     current_piece = ShapeFactory.get_random_shape()
                     if not board.is_valid_pos(current_piece):
                         state = "game_over"
@@ -137,6 +139,7 @@ def main():
             )
 
         screen.blit(font.render(f"Score: {score}", True, (200, 200, 200)), (8, 8))
+        screen.blit(font.render(f"Level: {level}", True, (200, 200, 200)), (8, 28))
 
         pygame.display.flip()
         clock.tick(60)
