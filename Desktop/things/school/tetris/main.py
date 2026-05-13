@@ -27,7 +27,7 @@ def main():
     while True:
 
         # ── start screen ─────────────────────────────────────────────────────
-        if state == "start":
+        if state == "start" or state == "main_menu":
             action = menus.show_start()
             if action == "quit":
                 break
@@ -44,9 +44,18 @@ def main():
             action = menus.show_game_over(score)
             if action == "quit":
                 break
-            board, current_piece, score, level = reset_game()
-            state = "playing"
-            continue
+            if action == "settings":
+                SettingsMenu(screen).show()
+                settings.reload()
+                state = "game_over"
+                continue
+            if action == "main_menu":
+                state = "start"
+                continue
+            if action == "play":
+                board, current_piece, score, level = reset_game()
+                state = "playing"
+                continue
 
         # ── pause screen ──────────────────────────────────────────────────────
         if state == "paused":

@@ -3,6 +3,7 @@ import sqlite3
 import os
 
 SCREEN_W, SCREEN_H = 300, 600
+SCREEN_END_W, SCREEN_END_H = 300, 1000
 DB_FILE = os.path.join(os.path.dirname(__file__), "tetris.db")
 
 C_BG        = (20,  20,  20)
@@ -206,6 +207,9 @@ class MenuManager:
 
     def show_game_over(self, score):
         is_new_record = self._record_and_check(score)
+        options = ["Retry", "Settings", "Main Menu", "Quit"]
+        selected = 0
+        button_rects = []
         pygame.event.clear()
 
         while True:
@@ -213,7 +217,7 @@ class MenuManager:
 
             _blit_centered(self.screen,
                            self.fm.render("GAME OVER", True, C_DANGER), 150)
-            pygame.draw.line(self.screen, C_DANGER, (60, 175), (SCREEN_W - 60, 175), 2)
+            pygame.draw.line(self.screen, C_DANGER, (60, 175), (SCREEN_END_W - 60, 175), 2)
 
             _blit_centered(self.screen,
                            self.fm.render(f"Score: {score}", True, C_WHITE), 220)
@@ -225,10 +229,14 @@ class MenuManager:
                 _blit_centered(self.screen,
                                self.fs.render(f"Best: {self.high_score}", True, C_GOLD), 265)
 
-            _blit_centered(self.screen,
-                           self.fm.render("ENTER  retry", True, C_ACCENT), 350)
-            _blit_centered(self.screen,
-                           self.fs.render("Q  quit", True, C_DIM), 395)
+            button_rects = [
+                _draw_button(self.screen, self.fm, "Retry", 330, selected == 0),
+                _draw_button(self.screen, self.fm, "Settings", 380, selected == 1),
+                _draw_button(self.screen, self.fm, "Main Menu", 430, selected == 2),
+                _draw_button(self.screen, self.fm, "Quit", 480, selected == 3),
+            ]
+
+            _blit_centered(self.screen, self.fs.render("^v navigate  ENTER select", True, C_DIM), 540)
 
             pygame.display.flip()
             self.clock.tick(30)
@@ -236,10 +244,21 @@ class MenuManager:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return "quit"
+                if event.type == pygame.MOUSEMOTION:
+                    for i, rect in enumerate(button_rects):
+                        if rect.collidepoint(event.pos):
+                            selected = i
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    for i, rect in enumerate(button_rects):
+                        if rect.collidepoint(event.pos):
+                            return ["play", "settings", "main_menu", "quit"][i]
                 if event.type == pygame.KEYDOWN:
+                    if event.key in (pygame.K_UP, pygame.K_w):
+                        selected = (selected - 1) % len(options)
+                    if event.key in (pygame.K_DOWN, pygame.K_s):
+                        selected = (selected + 1) % len(options)
                     if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                        return "play"
+                        return ["play", "settings", "main_menu", "quit"][selected]
                     if event.key == pygame.K_q:
                         return "quit"
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    return "play"
+                
