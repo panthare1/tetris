@@ -47,7 +47,8 @@ python main.py
 
 - From the **Start screen** choose *Play* to begin or *Settings* to rebind keys.
 - During the game press `Esc` to pause; from the pause menu you can resume, open settings, or quit.
-- After game over, press `Enter` to retry or `Q` to quit. Your score is saved automatically.
+- After game over, choose *Retry*, *Settings*, *Main Menu*, or *Quit*. Your score is saved automatically.
+- The game speeds up as your score increases — a new level is reached every 500 points.
 
 ---
 
@@ -85,7 +86,7 @@ The game loop in `main.py` only ever calls `piece.get_image()` — it is complet
 
 #### Inheritance
 
-Inheritance allows subclasses to reuse and extend the behaviour of a parent class. All seven tetromino types inherit from `Tetromino` and only override `_get_matrices()` to define their unique shapes and rotations:
+Inheritance allows subclasses to reuse and extend the behaviour of a parent class. All five tetromino types inherit from `Tetromino` and only override `_get_matrices()` to define their unique shapes and rotations:
 
 ```python
 # logic.py
@@ -163,7 +164,7 @@ for px, py in current_piece.get_image():           # same call for every shape
 
 ```python
 if board.is_valid_pos(current_piece, adj_y=1):   # works for ShapeI, ShapeT, ShapeL …
-    current_piece.y += 0.05
+    current_piece.y += 0.05 + (level - 1) * 0.02
 else:
     board.lock_shape(current_piece)
 ```
@@ -309,7 +310,7 @@ The project follows [PEP 8](https://peps.python.org/pep-0008/) guidelines:
 
 - Snake_case for all functions and variables (`get_image`, `clear_lines`, `load_bindings`)
 - PascalCase for all classes (`Tetromino`, `ShapeFactory`, `MenuManager`)
-- Constants in UPPER_CASE (`DEFAULT_BINDINGS`, `SHAPE_COLORS`, `C_ACCENT`)
+- Constants in UPPER_CASE (`DEFAULT_BINDINGS`, `SHAPE_COLORS`, `LINE_SCORES`, `C_ACCENT`)
 - Lines kept under 79 characters
 - Logical blank lines between class sections
 - Type hints used where appropriate (`dict[str, int]`, `pygame.Surface`)
@@ -321,21 +322,23 @@ The project follows [PEP 8](https://peps.python.org/pep-0008/) guidelines:
 ### 3.1 Results
 
 - The game is fully playable: pieces spawn, fall, rotate, lock, and lines clear correctly, all verified by 42 unit tests.
-- Implementing continuous gravity with a floating-point `y` value (instead of a timer) introduced a subtle truncation bug; switching from `int()` to `round()` in collision detection fixed it.
-- The SQLite database proved more robust than a plain text file — it handles concurrent-access edge cases and supports multiple tables (scores and keybindings) in one file.
-- The Factory Method pattern made it straightforward to add or remove shape types: only the `SHAPE_COLORS` dictionary needs updating; no other file requires changes.
+- A `LINE_SCORES` dictionary (`{1: 100, 2: 300, 3: 500, 4: 800}`) was added to `logic.py` to reward clearing multiple lines at once with higher points, making scoring more faithful to the original Tetris rules.
+- A level progression system was implemented: gravity speed increases by `0.02` per level, and a new level is reached every 500 points. Both the score and the current level are displayed on screen during play.
+- The game-over screen was extended with four navigation options — *Retry*, *Settings*, *Main Menu*, and *Quit* — giving the player more control without needing to quit and relaunch the game.
+- Mouse hover and click support was added to the `SettingsMenu`: `_draw()` now returns hit-rect data for each action row, and `show()` handles `MOUSEMOTION` and `MOUSEBUTTONDOWN` events so players can rebind keys by clicking as well as using the keyboard.
+- Implementing continuous gravity with a floating-point `y` value introduced a subtle truncation bug; switching from `int()` to `round()` in collision detection fixed it.
 - Mocking the database layer in unit tests (via `unittest.mock.patch`) was necessary to keep tests fast and side-effect-free, which highlighted the value of keeping I/O isolated in dedicated functions.
 
 ### 3.2 Conclusions
 
-This coursework produced a complete, working Tetris implementation that demonstrates all four OOP pillars in a practical context. Abstraction and inheritance allowed the five tetromino types to share all common logic while each defining only its unique shape data. Encapsulation in `Board` and `Settings` kept internal state protected and change-safe. Polymorphism let the game loop handle every piece identically through a single `get_image()` interface. The Factory Method pattern decoupled piece creation from the game loop, and SQLite persistence ensured scores and settings survived across sessions. The 42-test suite gives confidence that the core mechanics are correct.
+This coursework produced a complete, working Tetris implementation that demonstrates all four OOP pillars in a practical context. Abstraction and inheritance allowed the five tetromino types to share all common logic while each defining only its unique shape data. Encapsulation in `Board` and `Settings` kept internal state protected and change-safe. Polymorphism let the game loop handle every piece identically through a single `get_image()` interface. The Factory Method pattern decoupled piece creation from the game loop, and SQLite persistence ensured scores and settings survived across sessions. Level progression and improved multi-line scoring make the game increasingly challenging, and the expanded game-over screen and mouse support in the settings menu improve usability. The 42-test suite gives confidence that the core mechanics are correct.
 
 ### 3.3 Future Extensions
 
 - **Next-piece preview** — display the upcoming tetromino in a side panel.
-- **Level progression** — increase gravity speed as the score grows.
 - **Leaderboard screen** — show the top 10 scores from the `scores` table.
 - **Additional shapes** — add `ShapeJ`, `ShapeS`, `ShapeZ` by extending `Tetromino` and adding one entry to `SHAPE_COLORS`.
+- **Ghost piece** — render a transparent outline showing where the current piece will land.
 - **Multiplayer** — a second board rendered side-by-side for two-player local play.
 
 ---
